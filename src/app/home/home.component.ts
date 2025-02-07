@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -7,6 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+import { ChatService } from '../chat.service';
 
 @Component({
   selector: 'app-home',
@@ -24,16 +26,22 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
-export class HomeComponent {
-  joinGroupForm: FormGroup;
+export class HomeComponent implements OnInit {
 
-  constructor(
-    private fb: FormBuilder
-  ) {
-    this.joinGroupForm = this.fb.group({
-      user: ['', [Validators.required, Validators.minLength(3)]],
-      chatGroup: ['', [Validators.required, Validators.minLength(2)]]
+  joinGroupForm!: FormGroup;
+
+  formBuilder = inject(FormBuilder);
+
+  router = inject(Router);
+  chatService = inject(ChatService)
+
+  ngOnInit(): void {
+    // Initialize the form and define its structure with validation rules
+    this.joinGroupForm = this.formBuilder.group({
+      user: ['', Validators.required],         // User input with required validation
+      chatGroup: ['', Validators.required]      // Chat group input with required validation
     });
+
   }
 
   joinGroup(): void {
