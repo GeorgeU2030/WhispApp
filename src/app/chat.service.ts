@@ -7,7 +7,7 @@ import * as signalR from '@microsoft/signalr';
   providedIn: 'root'
 })
 export class ChatService {
-
+  
   // observables
   public messages$ = new BehaviorSubject<any>([]);
   public activeUsers$ = new BehaviorSubject<any>([]);
@@ -56,7 +56,53 @@ export class ChatService {
       setTimeout(() => this.start(), 5000);
     }
   }
-
   
+
+  public async joinGroup(user: String, chatGroup: String): Promise<void> {
+    try {
+      // Check if connection is active
+      if (this.connection.state === signalR.HubConnectionState.Disconnected) {
+        await this.start();
+      }
+      return await this.connection.invoke("JoinGroup", { user, chatGroup });
+    } catch (error) {
+      console.error("Error joining group:", error);
+      throw error;
+    }
+  }
+
+  public async SendChatMessage(message: string) {
+    try {
+      if (this.connection.state === signalR.HubConnectionState.Disconnected) {
+        await this.start();
+      }
+      return await this.connection.invoke("SendChatMessage", message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw error;
+    }
+  }
+
+  public async leaveChat() {
+    try {
+      // Clear local data
+      this.messages = [];
+      this.messages$.next([]);
+      this.activeUsers$.next([]);
+      
+      // Stop the connection
+      if (this.connection.state !== signalR.HubConnectionState.Disconnected) {
+        await this.connection.stop();
+        console.log("Connection stopped successfully");
+      }
+      
+      // Create a new connection instance but don't start it yet
+      this.connection = this.createConnection();
+      this.setupConnectionHandlers();
+    } catch (error) {
+      console.error("Error stopping connection:", error);
+      throw error;
+    }
+  }
 
 }
