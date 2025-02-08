@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,13 +38,29 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   // values
   inputMessage: string = '';
+  messages: any[] = [];
 
   userDisplayName = sessionStorage.getItem("user");
   groupName = sessionStorage.getItem("chatGroup");
 
   // start
   ngOnInit() {
-    console.log('chat component init');
+    this.chatService.messages$.subscribe((res) => {
+      // Update the local messages array and log to console
+      this.messages = res;
+      console.log(this.messages);
+    });
+
+    // Subscribe to connected users updates from the chat service
+    this.chatService.activeUsers$.subscribe((res) => {
+      // Log connected users to console
+      console.log(res);
+    });
+
+    if (sessionStorage.getItem('shouldRedirect') === 'true' || !this.userDisplayName || !this.groupName) {
+      sessionStorage.removeItem('shouldRedirect');
+      this.router.navigate(['home']);
+    }
   }
 
   // destroy
@@ -54,11 +70,27 @@ export class ChatComponent implements OnInit, OnDestroy {
 
 
   SendChatMessage(){
-    console.log('sendChatMessage');
+    // Call the SendChatMessage method from the chat service with the inputMessage
+    this.chatService.SendChatMessage(this.inputMessage)
+      .then(() => {
+        // If the message is sent successfully, reset the inputMessage variable
+        this.inputMessage = '';
+      })
+      .catch((err) => {
+        // Log any errors that occur during the SendChatMessage operation
+        console.log(err);
+      });
   }
 
-  leaveChat(){
-    console.log('leaveChat');
+  async leaveChat(){
+    try {
+      await this.chatService.leaveChat();
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("chatGroup");
+      await this.router.navigate(['home']);
+    } catch (error) {
+        console.error("Error leaving chat:", error);
+    }
   }
 
   // automatic scroll
@@ -67,5 +99,19 @@ export class ChatComponent implements OnInit, OnDestroy {
       this.scrollContainer.nativeElement.scrollTop = 
         this.scrollContainer.nativeElement.scrollHeight;
     } catch(err) { }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+beforeUnloadHandler(event: BeforeUnloadEvent) {
+      // Mostrar confirmación antes de cerrar o recargar
+      event.preventDefault();
+      event.returnValue = 'Are you sure you want to leave?'; 
+  }
+
+  @HostListener('window:unload')
+  unloadHandler() {
+      this.chatService.leaveChat(); // Realizar limpieza cuando la página se cierre
+      // Marcar que se necesita redirigir
+      sessionStorage.setItem('shouldRedirect', 'true');
   }
 }
