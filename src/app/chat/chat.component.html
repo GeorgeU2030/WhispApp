@@ -1,1 +1,81 @@
-<p>chat works!</p>
+<!-- chat.component.html -->
+<mat-sidenav-container class="chat-container">
+    <!-- Modificamos el sidenav para que sea responsive -->
+    <mat-sidenav #sidenav 
+                 [mode]="mobileQuery.matches ? 'over' : 'side'"
+                 [opened]="!mobileQuery.matches"
+                 [fixedInViewport]="mobileQuery.matches"
+                 class="users-sidebar">
+      <!-- Header with Whisp logo -->
+      <div class="brand-header">
+        <h1 class="whisp-title">
+          <span class="letter-w">W</span><span class="letter-h">h</span><span class="letter-i">i</span><span class="letter-s">s</span><span class="letter-p">p</span>
+        </h1>
+        <!-- Botón de cierre solo visible en móviles -->
+        <button *ngIf="mobileQuery.matches" 
+                mat-raised-button 
+                class="closebtn"
+                (click)="sidenav.close()">
+          Chat
+        </button>
+      </div>
+  
+      <!-- Connected users list -->
+      <mat-nav-list class="users-list">
+        <mat-list-item *ngFor="let user of this.chatService.activeUsers$ | async">
+          <img matListAvatar [src]="user.avatar || 'assets/default-avatar.png'" [alt]="user">
+          <div matLine class="user-name">{{user}}</div>
+          <mat-icon class="online-status" [class.online]="true">fiber_manual_record</mat-icon>
+        </mat-list-item>
+      </mat-nav-list>
+    </mat-sidenav>
+  
+    <mat-sidenav-content class="chat-content">
+      <!-- Chat header -->
+      <mat-toolbar color="primary" class="chat-header">
+        <button mat-icon-button (click)="sidenav.toggle()" class="menu-button">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <span class="group-name">Group {{groupName}}</span>
+        <span class="toolbar-spacer"></span>
+        <button mat-raised-button color="warn" (click)="leaveChat()" class="leave-button">
+          <mat-icon>exit_to_app</mat-icon>
+          <span class="button-text">Leave Chat</span>
+        </button>
+      </mat-toolbar>
+  
+      <!-- Messages area -->
+      <div class="messages-container" #scrollContainer>
+        <ng-container *ngFor="let message of this.chatService.messages$ | async">
+          <div class="message-wrapper" [ngClass]="{'own-message': message.user === userDisplayName}">
+            <mat-card class="message-card" [ngClass]="{'incoming': message.user != userDisplayName, 'outgoing': message.user === userDisplayName}">
+              <mat-card-header *ngIf="message.user != userDisplayName">
+                <img mat-card-avatar [src]="message.avatar || 'assets/default-avatar.png'" [alt]="message.user">
+                <mat-card-title class="message-user">{{message.user}}</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <p>{{message.message}}</p>
+              </mat-card-content>
+              <mat-card-footer>
+                <span class="message-time">{{message.messageTime | date:'medium'}}</span>
+              </mat-card-footer>
+            </mat-card>
+          </div>
+        </ng-container>
+      </div>
+  
+      <!-- Message input area -->
+        <div class="input-toolbar">
+            <mat-form-field appearance="outline" class="message-input">
+              <input matInput
+                     [(ngModel)]="inputMessage"
+                     placeholder="Type a message"
+                     (keydown.enter)="SendChatMessage()" class="inputfield">
+              <button mat-icon-button matSuffix (click)="SendChatMessage()">
+                <mat-icon>send</mat-icon>
+              </button>
+            </mat-form-field>
+        </div>
+      
+    </mat-sidenav-content>
+  </mat-sidenav-container>

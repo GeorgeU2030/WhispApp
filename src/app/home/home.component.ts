@@ -46,7 +46,23 @@ export class HomeComponent implements OnInit {
 
   joinGroup(): void {
     if (this.joinGroupForm.valid) {
-      console.log('Joining group', this.joinGroupForm.value);
+      // Extract user and chatGroup values from the form
+      const { user, chatGroup } = this.joinGroupForm.value;
+    
+      // Store user and chatGroup values in sessionStorage for future use
+      sessionStorage.setItem("user", user);
+      sessionStorage.setItem("chatGroup", chatGroup);
+    
+      // Call the joinGroup method from the chat service
+      this.chatService.joinGroup(user, chatGroup)
+        .then(() => {
+          // If the joinGroup operation is successful, navigate to the 'chat' route
+          this.router.navigate(['chat']);
+        })
+        .catch((error) => {
+          // If there's an error during the joinGroup operation, log the error
+          console.log(error);
+        });
     }
   }
 }
